@@ -1,0 +1,44 @@
+---
+- name: Install java dependencies
+  apt:
+    name: software-properties-common
+
+- name: Add oracle apt repo
+  apt_repository:
+    repo: ppa:webupd8team/java
+    state: present
+
+- name: Accept license
+  shell: echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
+
+- name: Install java
+  apt:
+    name: openjdk-8-jdk-headless
+    state: present
+
+- name: Add java to path
+  lineinfile:
+    path: /home/{{ username }}/.bashrc
+    line: export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+    state: present
+
+- name: Add path to .profile
+  blockinfile:
+    dest: /home/{{ username }}/.profile
+    create: yes
+    owner: "{{ username | lower }}"
+    group: "{{ username | lower }}"
+    mode: 0644
+    block: |
+      export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+      export JAVA_OPTS="-Djava.awt.headless=true -Xmx128m -XX:+UseConcMarkSweepGC"
+      export MAHOUT_DIR=/home/{{ username }}/apache-mahout-distribution-0.11.1
+      export CLASSPATH=$CLASSPATH:.:/usr/share/java/mysql.jar
+
+- name: Add path to /etc/environment
+  lineinfile:
+    dest: /etc/environment
+    line: export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+    state: present
+
+### More java install options: https://packages.ubuntu.com/bionic/java/

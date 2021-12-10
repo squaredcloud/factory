@@ -1,0 +1,5 @@
+---
+- name: Install python
+ raw: test -e /usr/bin/python || (apt -qqy update && apt install -y python)
+ register: output
+ changed_when: output.stdout != ""

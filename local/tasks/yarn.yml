@@ -1,0 +1,13 @@
+---
+- name: Add yarn apt-key
+  apt_key:
+    url: https://dl.yarnpkg.com/debian/pubkey.gpg
+    state: present
+
+- name: Yarn install prep
+  command: echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+
+- name: Install yarn
+  apt:
+    name: yarn
+    state: present

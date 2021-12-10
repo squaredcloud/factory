@@ -1,0 +1,13 @@
+# Ignore .vagrant folder
+/local/.vagrant
+
+# Ignore .DS_store
+.DS_store
+
+# Ignore Ansible .retry
+*.retry
+
+# Ignore personal configs
+/web/vars/passwords/passwords.yml
+/web/vars/certs/*.yml
+/web/vars/ssh_keys/*.yml

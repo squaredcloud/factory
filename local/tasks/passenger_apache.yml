@@ -1,0 +1,53 @@
+---
+- name: Install passenger dependencies
+  apt:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - dirmngr
+      - gnupg
+      - apt-transport-https
+      - ca-certificates
+
+- name: Add passenger apt key
+  apt_key:
+    keyserver: hkp://keyserver.ubuntu.com:80
+    id: 561F9B9CAC40B2F7
+    state: present
+
+- name: Add apt http capabilities
+  apt: name=apt-transport-https state=present
+
+- name: Add Phusion apt repo
+  apt_repository:
+    repo: 'deb https://oss-binaries.phusionpassenger.com/apt/passenger {{ ansible_distribution_release }} main'
+    state: present
+    update_cache: true
+
+- name: Install apache and passenger
+  apt:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - passenger
+      - libapache2-mod-passenger
+      - apache2
+      - apache2-utils
+
+- name: Remove default html folder
+  file:
+    dest: /var/www/html
+    state: absent
+
+- name: Check if passenger module is enabled
+  stat:
+    path: /etc/apache2/mods-enabled/passenger
+  register: passenger_state
+
+- name: Enable passenger module
+  apache2_module:
+    name: passenger
+    state: present
+  when: passenger_state.stat.exists == True

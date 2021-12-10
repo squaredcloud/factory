@@ -1,0 +1,14 @@
+---
+- name: Update web servers
+  hosts: web
+  remote_user: ubuntu
+  become: true
+  gather_facts: true
+
+  # vars_files:
+  #   - vars/vars.yml
+  #   - servers/{{ app_env }}_{{ server_name }}.yml
+  #   - vars/passwords/passwords.yml
+
+  tasks:
+    - import_tasks: tasks/ssh.yml

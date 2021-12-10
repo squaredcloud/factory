@@ -1,0 +1,8 @@
+---
+- name: Add node apt-key
+  shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+
+- name: Install nodejs
+  apt:
+    name: nodejs
+    state: present

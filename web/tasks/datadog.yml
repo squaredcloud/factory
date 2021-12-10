@@ -1,0 +1,31 @@
+---
+- name: Include datadog config vars
+  include_vars:
+    file: vars/configs/datadog/datadog_{{ app_env }}_{{ server_name }}.yml
+
+- name: Create sysprobe config
+  blockinfile:
+    dest: /etc/datadog-agent/system-probe.yaml
+    create: yes
+    owner: dd-agent
+    group: root
+    block: |
+      {{ datadog_sysprobe_config }}
+  tags: datadog
+
+- name: Start sysprobe service
+  service:
+    name: datadog-agent-sysprobe
+    state: started
+  tags: datadog
+
+- name: Change log dir permissions
+  shell: setfacl -m u:dd-agent:rx /var/log/apache2/
+  when: server_name != "solr_us" and server_name != "solr_uk"
+  tags: datadog
+
+- name: Restart datadog agent
+  service:
+    name: datadog-agent
+    state: restarted
+  tags: datadog

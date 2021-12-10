@@ -1,0 +1,39 @@
+---
+- name: Include motd config vars
+  include_vars:
+    file: configs/motd/motd_{{ app_env }}.yml
+
+- name: Remove old motd
+  file:
+    dest: '{{ item }}'
+    state: absent
+  with_items:
+    - /etc/update-motd.d/00-header
+    - /etc/update-motd.d/10-help-text
+    - /etc/update-motd.d/50-motd-news
+    - /etc/update-motd.d/51-cloudguest
+    - /etc/update-motd.d/60-unminimize
+    - /etc/update-motd.d/80-esm
+    - /etc/update-motd.d/80-livepatch
+    - /etc/update-motd.d/91-release-upgrade
+    - /etc/update-motd.d/999-message
+    - /etc/update-motd.d/99-neofetch
+    - /etc/update-motd.d/10-message
+    - /etc/update-motd.d/10-motd
+
+- name: Create motd
+  blockinfile:
+    dest: /etc/update-motd.d/10-motd
+    create: yes
+    owner: root
+    group: root
+    mode: 0755
+    marker: ""
+    block: |
+      {{ motd }}
+
+- name: Remove blank lines from motd
+  lineinfile:
+    path: /etc/update-motd.d/10-motd
+    state: absent
+    regexp: '^$'

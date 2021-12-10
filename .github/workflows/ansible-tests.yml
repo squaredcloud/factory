@@ -1,0 +1,31 @@
+name: ansible tests
+
+on: [pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: install dependencies
+      run: |
+        sudo apt-get install make gcc build-essential ansible yamllint -y
+        pip install wheel
+        pip install ansible-lint
+
+    - name: yamllint test
+      continue-on-error: true
+      run: |
+        #yamllint -c /home/runner/work/lab/lab/web/vars/testing/.yamllint .
+        yamllint -d relaxed .
+
+    - name: ansible-lint test
+      continue-on-error: true
+      run: |
+        pip show ansible-lint
+        export PATH="~/.local/bin"
+        ansible-lint -c /home/runner/work/lab/lab/web/vars/testing/.ansible-lint web/main.yml
+        ansible-lint -c /home/runner/work/lab/lab/web/vars/testing/.ansible-lint local/main.yml

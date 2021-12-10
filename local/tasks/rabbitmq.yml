@@ -1,0 +1,14 @@
+---
+- name: Install rabbitmq
+  apt:
+    name: rabbitmq-server
+    state: present
+
+- name: Enable rabbitmq management plugin
+  shell: rabbitmq-plugins enable rabbitmq_management
+
+- name: Start rabbitmq service
+  service:
+    name: rabbitmq-server
+    state: restarted
+    enabled: yes

@@ -1,0 +1,75 @@
+---
+- name: Configure EC2 instance
+  hosts: local
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - vars/vars.yml
+    - servers/{{ app_env }}_{{ server_name }}.yml
+
+  tasks:
+      import_tasks: tasks/ec2_create.yml
+
+- name: Provision EC2 instance
+  hosts: web
+  remote_user: ubuntu
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - vars/vars.yml
+    - vars/passwords/passwords.yml
+    - servers/{{ app_env }}_{{ server_name }}.yml
+
+  pre_tasks:
+
+    - import_tasks: tasks/update.yml
+    - import_tasks: tasks/user.yml
+    - import_tasks: tasks/ssh.yml
+
+  roles:
+
+    - role: rvm.ruby
+      rvm1_rubies: ['ruby-{{ ruby_version }}']
+      rvm1_bundler_install: true
+      rvm1_user: '{{ username | lower }}'
+      #rvm1_gpg_key_server: 'hkp://pgp.mit.edu'
+      when:
+
+  tasks:
+    - import_tasks: tasks/packages.yml
+    - import_tasks: tasks/configs.yml
+    - import_tasks: tasks/motd.yml
+    - import_tasks: tasks/aws_cli.yml
+      when:
+    - import_tasks: tasks/passenger_apache.yml
+      when:
+    - import_tasks: tasks/app_prep.yml
+      when:
+    - import_tasks: tasks/mysql_client.yml
+      when:
+    - import_tasks: tasks/mysql_server.yml
+      when:
+    - import_tasks: tasks/rabbitmq.yml
+      when:
+    - import_tasks: tasks/redis.yml
+      when:
+    - import_tasks: tasks/java.yml
+      when:
+    - import_tasks: tasks/mahout.yml
+      when:
+    - import_tasks: tasks/solr.yml
+      when:
+    - import_tasks: tasks/nodejs.yml
+      when:
+    - import_tasks: tasks/yarn.yml
+      when:
+    - import_tasks: tasks/ftp.yml
+      when:
+    - import_tasks: tasks/logrotate.yml
+      when:
+    - import_tasks: tasks/prometheus.yml
+    - import_tasks: tasks/harden.yml
+    - import_tasks: tasks/restart.yml
+      tags: restart

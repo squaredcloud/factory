@@ -1,0 +1,260 @@
+---
+- name: Include vars
+  include_vars:
+    file: vars/configs/apache/apache_maintenance.yml
+
+- name: Remove default apache2 package
+  apt:
+    name: ['apache2=2.4.29-1ubuntu4.11', 'apache2=2.4.29-1ubuntu4']
+    state: absent
+
+- name: Add updated apache2 ppa
+  apt_repository:
+    repo: ppa:ondrej/apache2
+    state: present
+
+- name: Update cache
+  apt:
+    update_cache: yes
+
+- name: Install updated apache2 version
+  apt:
+    name: apache2
+    state: present
+
+- name: Install passenger dependencies
+  apt:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - dirmngr
+      - gnupg
+      - apt-transport-https
+      - ca-certificates
+
+- name: Add passenger apt key
+  apt_key:
+    keyserver: hkp://keyserver.ubuntu.com:80
+    id: 561F9B9CAC40B2F7
+    state: present
+
+- name: Add apt http capabilities
+  apt: name=apt-transport-https state=present
+
+- name: Add Phusion apt repo
+  apt_repository:
+    repo: 'deb https://oss-binaries.phusionpassenger.com/apt/passenger {{ ansible_distribution_release }} main'
+    state: present
+    update_cache: true
+
+- name: Install apache and passenger
+  apt:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - passenger
+      - libapache2-mod-passenger
+      - apache2
+      - apache2-utils
+
+- name: Remove default html folder
+  file:
+    dest: /var/www/html
+    state: absent
+
+- name: Create vhosts directory
+  file:
+    dest: /var/www/vhosts
+    state: directory
+    owner: "{{ username | lower }}"
+    group: "{{ username | lower }}"
+    mode: 0755
+
+- name: Enable rewrite module
+  apache2_module:
+    name: rewrite
+    state: present
+
+- name: Enable passenger module
+  apache2_module:
+    name: passenger
+    state: present
+
+- name: Disable server signature
+  replace:
+    path: /etc/apache2/conf-enabled/security.conf
+    regexp: 'ServerSignature On'
+    replace: "ServerSignature Off"
+
+- name: Change server tokens version
+  replace:
+    path: /etc/apache2/conf-enabled/security.conf
+    regexp: 'ServerTokens OS'
+    replace: "ServerTokens Prod"
+
+- name: Disable TLS
+  replace:
+    path: /etc/apache2/mods-available/ssl.conf
+    regexp: 'SSLProtocol all -SSLv3\n'
+    replace: "SSLProtocol all -SSLv3 -TLSv1"
+
+- name: Enable ssl module
+  apache2_module:
+    name: ssl
+    state: present
+
+- name: Delete default mod_status
+  file:
+    dest: /etc/apache2/mods-available/status.conf
+    state: absent
+  tags: datadog
+  when: app_env == "prod"
+
+- name: Edit mod_status
+  blockinfile:
+    dest: /etc/apache2/mods-available/status.conf
+    create: yes
+    owner: root
+    group: root
+    mode: 0777
+    block: |
+      {{ apache_mod_status }}
+  tags: datadog
+  when: app_env == "prod"
+
+- name: Enable mod_status
+  apache2_module:
+    name: status
+    state: present
+  when: app_env == "prod"
+  tags: datadog
+  ignore_errors: yes
+
+- name: Reload apache
+  service:
+    name: apache2
+    state: reloaded
+
+- name: Include apache config vars
+  include_vars:
+    file: "{{ item }}"
+  with_items:
+    - configs/apache/apache_{{ app_env }}_{{ server_name }}.yml
+    - vars/configs/apache/apache_maintenance.yml
+    - vars/certs/ssl_certs_{{ app_env }}.yml
+
+- name: Edit apache mpm config
+  replace:
+    path: /etc/apache2/mods-enabled/mpm_event.conf
+    regexp: '(<IfModule mpm_event_module>[\s\S]*)</IfModule>'
+    replace: |
+      {{ apache_mpm_config }}
+
+- name: Create apache common config file
+  blockinfile:
+    dest: /etc/apache2/conf-available/passenger-common.conf
+    create: yes
+    owner: root
+    group: root
+    mode: 0644
+    block: |
+      <IfModule mod_passenger.c>
+        PassengerMaxPoolSize 70
+        PassengerPoolIdleTime 0
+        PassengerMinInstances 70
+      </IfModule>
+  when: server_name == "neo_us" or server_name == "neo_uk"
+
+- name: Enable passenger-common config
+  shell: a2enconf passenger-common
+  when: server_name == "neo_us" or server_name == "neo_uk"
+
+- name: Create common and ssl directories
+  file:
+    dest: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - /etc/apache2/ssl
+    - /etc/apache2/common
+
+- name: Create apache maintenance file
+  blockinfile:
+    dest: /etc/apache2/common/apache.maintenance
+    create: yes
+    mode: 0644
+    block: |
+      {{ apache_maintenance }}
+
+- name: Create apache disabled maintenance file
+  blockinfile:
+    dest: /etc/apache2/common/maintenance.html.disabled
+    create: yes
+    mode: 0644
+    block: |
+      {{ apache_maintenance_disabled }}
+
+- name: Create common ssl file
+  blockinfile:
+    dest: /etc/apache2/common/{{ app_name }}.{{ app_env }}.ssl
+    create: yes
+    mode: 0644
+    block: |
+      SSLEngine on
+      SSLCertificateFile   /etc/apache2/ssl/{{ app_env }}.crt
+      SSLCertificateKeyFile /etc/apache2/ssl/{{ app_env }}.key
+      SSLCertificateChainFile /etc/apache2/ssl/gd_bundle_{{ app_env }}.crt
+
+- name: Create gd_bundle ssl key
+  blockinfile:
+    dest: /etc/apache2/ssl/gd_bundle_{{ app_env }}.crt
+    create: yes
+    mode: 0644
+    block: |
+      {{ gd_bundle }}
+
+- name: Create ssl crt
+  blockinfile:
+    dest: /etc/apache2/ssl/{{ app_env }}.crt
+    create: yes
+    mode: 0644
+    block: |
+      {{ ssl_crt }}
+
+- name: Create ssl key
+  blockinfile:
+    dest: /etc/apache2/ssl/{{ app_env }}.key
+    create: yes
+    mode: 0644
+    block: |
+      {{ ssl_key }}
+
+- name: Enable rewrite module
+  apache2_module:
+    name: rewrite
+    state: present
+
+- name: Enable headers module
+  apache2_module:
+    name: headers
+    state: present
+  when: server_name == "neo" or "neoapp"
+
+- name: Enable expires module
+  apache2_module:
+    name: expires
+    state: present
+  when: server_name == "neo" or "neoapp"
+
+- name: Disable default site
+  shell: a2dissite 000-default
+
+- name: Change permissions of apache log dir
+  file:
+    dest: /var/log/apache2
+    state: directory
+    mode: 0755

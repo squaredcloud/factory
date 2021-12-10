@@ -1,0 +1,9 @@
+---
+server_name:
+app_env:
+username:
+awscli_profile:
+
+### Options:
+#username: username used when provisioning the server
+#awscli_profile: profile to use in ~/.aws/config. Set to default for defaults

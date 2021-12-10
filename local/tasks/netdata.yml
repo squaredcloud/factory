@@ -1,0 +1,42 @@
+---
+- name: Check if netdata is installed
+  stat:
+    path: /etc/netdata
+  register: stat_result_netdata
+
+- name: Install netdata
+  shell: bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait --no-updates --dont-start-it
+  args:
+    executable: /bin/bash
+  when: stat_result_netdata.stat.exists == False
+
+- name: Configure netdata backend hostname
+  lineinfile:
+    path: /etc/netdata/netdata.conf
+    insertafter: '#\s+hostname\s+\=\s+'
+    line: '        hostname = {{ server_name }}'
+    state: present
+
+- name: Configure netdata registry hostname
+  lineinfile:
+    path: /etc/netdata/netdata.conf
+    insertafter: '#\s+registry\s+hostname\s+\=\s+'
+    line: '        registry hostname = {{ server_name }}'
+    state: present
+
+- name: Configure netdata global hostname
+  lineinfile:
+    path: /etc/netdata/netdata.conf
+    insertbefore: '#\s+process\s+scheduling\s+policy\s+\=\s+keep\s+'
+    firstmatch: yes
+    line: '        hostname = {{ server_name }}'
+    state: present
+
+- name: Restart netdata
+  service:
+    name: netdata
+    state: restarted
+
+#- name: Uninstall netdata
+#  command: /usr/libexec/netdata/netdata-uninstaller.sh --yes --force
+#  ignore_errors: yes

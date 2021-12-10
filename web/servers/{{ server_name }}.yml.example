@@ -1,0 +1,40 @@
+---
+# EC2 Instance Info
+instance_name:
+host_name:
+termination_protection:
+aws_profile: "{{ awscli_profile }}"
+key_pair:
+operating_system:
+ami_id:
+region:
+ec2_volume_size:
+type:
+subnet_id:
+group:
+count:
+
+# Provision Info
+app_name:
+ssh_access:
+ruby_version:
+solr_version:
+
+### Options:
+# EC2 Instance Info: read in lab/web/tasks/ec2_create.yml
+#instance_name: Determines which server referred to for the count variable
+#host_name: <app>.<domain>.com
+#termination_protection: yes/no
+#aws_profile: which profile in ~/.aws to use
+#key_pair: which AWS key pair to associate with the instance
+#operating_system: verbose OS name for EC2 tags
+#ami_id: specific ami ID of the operating system
+#region: AWS region to build the instance in
+#ec2_volume_size: ebs volue size in gb
+#type: EC2 instance type
+#subnet_id: instance subnet ID
+#group: instance security group(s)
+#count: ammount of identical instances to create based on the instance_name variable
+
+#app_name: name of app repo
+#ssh_access: for vars/ssh_keys/

@@ -1,0 +1,18 @@
+---
+- name: Include config vars
+  include_vars:
+    file: vars/configs/bashrc/bashrc_{{ app_env }}.yml
+
+- name: Remove original bashrc
+  file:
+    path: /home/{{ username | lower }}/.bashrc
+    state: absent
+
+- name: Create bashrc
+  blockinfile:
+    dest: /home/{{ username | lower }}/.bashrc
+    create: yes
+    owner: "{{ username | lower }}"
+    group: "{{ username | lower }}"
+    block: |
+      {{ bashrc }}
