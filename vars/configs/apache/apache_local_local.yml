@@ -1,0 +1,34 @@
+---
+apache_config: |
+  <VirtualHost *:443>
+    ServerName factory.vm
+
+    SSLEngine On
+    SSLCertificateFile /etc/apache2/ssl/server.crt
+    SSLCertificateKeyFile /etc/apache2/ssl/server.key
+
+    <IfModule mod_passenger.c>
+      PassengerRuby /home/vagrant/.rvm/gems/ruby-{{ ruby_version }}@{{ app_name }}/wrappers/ruby
+      PassengerMaxRequests 1000
+    </IfModule>
+
+    RailsEnv development
+
+    DocumentRoot "/var/www/vhosts/{{ app_name }}/public"
+    <Directory "/var/www/vhosts/{{ app_name }}/public">
+      Order allow,deny
+      Allow from all
+
+      AllowOverride all
+      Options -MultiViews
+
+      Require all granted
+    </Directory>
+  </VirtualHost>
+
+apache_ssl_redirect: |
+  <VirtualHost *:80>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
+  </VirtualHost>
