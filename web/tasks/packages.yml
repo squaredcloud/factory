@@ -1,5 +1,0 @@
----
-- name: Install main packages
-  apt:
-    name: ['vim', 'curl', 'less', 'git', 'bash-completion', 'tmux', 'htop', 'atop', 'ncdu', 'iotop', 'dstat', 'fail2ban', 'imagemagick', 'sysstat', 'ranger']
-    state: present

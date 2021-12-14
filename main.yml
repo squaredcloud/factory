@@ -1,0 +1,33 @@
+---
+- name: Provision virtual machine
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - vars/vars.yml
+
+  roles:
+
+    - role: rvm.ruby
+      rvm1_rubies: ['ruby-{{ ruby_version }}']
+      rvm1_bundler_install: true
+      rvm1_user: vagrant
+
+  tasks:
+
+    - import_tasks: tasks/pre_tasks.yml
+    - import_tasks: tasks/packages.yml
+    - import_tasks: tasks/configs.yml
+    - import_tasks: tasks/motd.yml
+    - import_tasks: tasks/aws_cli.yml
+    - import_tasks: tasks/passenger_apache.yml
+    - import_tasks: tasks/apache_config_local.yml
+    - import_tasks: tasks/mysql_client.yml
+    - import_tasks: tasks/rabbitmq.yml
+    - import_tasks: tasks/redis.yml
+    # - import_tasks: tasks/java.yml
+    - import_tasks: tasks/nodejs.yml
+    - import_tasks: tasks/yarn.yml
+    # - import_tasks: tasks/netdata.yml
+    - import_tasks: tasks/harden.yml

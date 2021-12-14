@@ -1,7 +1,0 @@
----
-app_env: local
-server_name: local
-username: vagrant
-ruby_version:
-solr_version:
-pyenv_version:
